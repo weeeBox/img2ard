@@ -1,4 +1,5 @@
 require 'chunky_png'
+require 'fileutils'
 
 require_relative 'asset_file'
 require_relative 'image_char_array'
@@ -7,8 +8,14 @@ task :init do
   $dir_output = File.expand_path 'output'
 end
 
+task :make_dirs => [:init] do
+  FileUtils.rm_rf $dir_output
+  FileUtils.mkpath $dir_output
+end
+
+
 desc 'Convert all files in the selected directory to drawBitmap binary format'
-task :convert_files, [:path] do |t, args|
+task :convert_files, [:path] => [:make_dirs] do |t, args|
 
   path = args[:path]
   raise 'Please provide path' if path.nil?
@@ -36,7 +43,7 @@ task :convert_files, [:path] do |t, args|
           byte = 0
           alpha_byte = 0
           (0..bits-1).each do |bit_height|
-            px = img[x, y_page*8 + bit_height]
+            px = img[x, y_page * 8 + bit_height]
             # right now we only care about black/white so convert to greyscale
             c = ChunkyPNG::Color.grayscale_teint(px)
             alpha = ChunkyPNG::Color.a(px)
@@ -58,9 +65,10 @@ task :convert_files, [:path] do |t, args|
 
   end
 
-  File.open(resource.filename, 'w') do |f|
+  file_output = "#{$dir_output}/#{resource.filename}"
+  File.open(file_output, 'w') do |f|
     f.write resource.to_s
   end
-  puts "\n#{resource.filename} compiled."
+  puts "\n#{file_output} compiled."
 
 end
